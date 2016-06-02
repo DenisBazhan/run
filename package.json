@@ -16,7 +16,9 @@
     "gulp-uncss":       "^1.0.5",
     "gulp-cssnano":     "",
     "rimraf":           "",
+    "gulp-exec":           "",
     "autoprefixer":     "",
+    "postcss-merge-rules":     "",
     "gulp-postcss":     "",
     "run-sequence":     "",
     "gulp.spritesmith":     ""

@@ -6,12 +6,14 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     rimraf = require('rimraf');
 
-var runSequence = require('run-sequence');
+var runSequence = require('run-sequence'),
+    exec = require('gulp-exec');
 
 var postcss = require('gulp-postcss'),
     cssnano = require('gulp-cssnano'),
     uncss = require('gulp-uncss'),
     autoprefixer = require('autoprefixer'),
+    mergerules = require('postcss-merge-rules'),
     spritesmith = require('gulp.spritesmith');
 
 var path = {
@@ -59,9 +61,8 @@ var option_list = {
     }
 };
 
-
 gulp.task('build', function () {
-    runSequence('delete build', 'parse html path', 'build style');
+    runSequence('delete build', 'parse html path', 'build style', 'run shell tidy.exe');
 });
 
 gulp.task('parse html path', function () {
@@ -72,12 +73,11 @@ gulp.task('parse html path', function () {
 
 gulp.task('build style', function () {
     return gulp.src(path.build.file.css)
+        .pipe(postcss([mergerules]))
         .pipe(uncss(option_list.uncss.files))
         .pipe(postcss(option_list.postcss.processors))
         .pipe(gulp.dest(path.build.css));
 });
-
-
 
 gulp.task('copy image', function () {
     gulp.src(['src/assets/*img/**/*.*']).pipe(gulp.dest(path.build.folder.assets));
@@ -89,4 +89,9 @@ gulp.task('copy style.min.css', function () {
 
 gulp.task('delete build', function (cb) {
     rimraf(path.clean, cb);
+});
+
+gulp.task('run shell tidy.exe', function () {
+    gulp.src('./')
+        .pipe(exec('csstidy.exe build/assets/css/style.min.css build/assets/css/style.min.css'));
 });

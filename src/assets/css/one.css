@@ -1,6 +1,12 @@
 .one {
     cursor: pointer;
 }
+.one {
+    cursor: default;
+}
+.one {
+    background-color: red;
+}
 
 .comment {
     width: 300px;

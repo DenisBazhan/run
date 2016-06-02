@@ -3,3 +3,5 @@ node_modules/
 src/_pgbackup/
 src/pinegrow.json
 /src/bower_components/
+build/
+csstidy.exe
