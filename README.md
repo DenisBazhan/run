@@ -1,1 +1,1 @@
-run
+This is startup repo for frontend dev
