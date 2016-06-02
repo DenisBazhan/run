@@ -1,5 +1,5 @@
 .idea
-node_modules
-src/_pgbackup
+node_modules/
+src/_pgbackup/
 src/pinegrow.json
-src/bower_components
+/src/bower_components/
