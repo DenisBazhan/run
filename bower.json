@@ -1,0 +1,16 @@
+{
+  "name": "start",
+  "version": "0.0.0",
+  "authors": ["Denis Bazhan"],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "src/bower_components"
+  ],
+  "dependencies": {
+    "jquery": "2.2.4",
+    "slick": "",
+    "bootstrap": "3.3.6"
+  }
+}
