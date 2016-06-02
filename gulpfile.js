@@ -2,8 +2,8 @@
 
 var gulp = require('gulp'),
     useref = require('gulp-useref'),
-    gulpif = require('gulp-if'),
     uglify = require('gulp-uglify'),
+    replace = require('gulp-replace'),
     rimraf = require('rimraf');
 
 var runSequence = require('run-sequence'),
@@ -12,9 +12,17 @@ var runSequence = require('run-sequence'),
 var postcss = require('gulp-postcss'),
     cssnano = require('gulp-cssnano'),
     uncss = require('gulp-uncss'),
+    cleanCSS = require('gulp-clean-css'),
+    gcmq = require('gulp-group-css-media-queries'),
     autoprefixer = require('autoprefixer'),
     mergerules = require('postcss-merge-rules'),
-    spritesmith = require('gulp.spritesmith');
+    duplicates = require('postcss-discard-duplicates'),
+    colormin = require('postcss-colormin');
+
+var spritesmith = require('gulp.spritesmith'),
+    buffer = require('vinyl-buffer'),
+    imagemin = require('gulp-imagemin'),
+    merge = require('merge-stream');
 
 var path = {
     build: {
@@ -35,13 +43,14 @@ var path = {
         // js: 'src/assets/js/main.js',
         css: 'src/assets/css/*.css',
         img: 'src/assets/img/*.*',
-        sprite: 'src/assets/img/sprite/*.*',
+        sprite: 'src/assets/sprite/*.*',
         fonts: 'src/assets/fonts/*.*',
         file: {
             css: 'src/assets/css/style.min.css'
         },
         folder: {
-            css: 'src/assets/css/'
+            css: 'src/assets/css/',
+            img: 'src/assets/img/'
         }
     },
     clean: 'build'
@@ -56,13 +65,29 @@ var option_list = {
     postcss: {
         processors: [
             autoprefixer({browsers: ['last 1 version']}),
-            cssnano
+            duplicates(),
+            colormin()
         ]
+    },
+    cleanCSS: {
+        processors: {
+            debug: true,
+            keepSpecialComments: 0
+        }
     }
 };
 
 gulp.task('build', function () {
-    runSequence('delete build', 'parse html path', 'build style', 'run shell tidy.exe');
+    runSequence(
+        'delete build folder',
+        'generate sprite',
+        'parse html path',
+        'pre-build style',
+        // 'run shell tidy.exe',
+        'copy image',
+        'copy fonts',
+        'final-build style'
+    );
 });
 
 gulp.task('parse html path', function () {
@@ -71,27 +96,68 @@ gulp.task('parse html path', function () {
         .pipe(gulp.dest(path.build.html));
 });
 
-gulp.task('build style', function () {
+gulp.task('pre-build style', function () {
     return gulp.src(path.build.file.css)
-        .pipe(postcss([mergerules]))
         .pipe(uncss(option_list.uncss.files))
         .pipe(postcss(option_list.postcss.processors))
+        .pipe(gcmq())
         .pipe(gulp.dest(path.build.css));
 });
 
+gulp.task('final-build style', function () {
+    return gulp.src(path.build.file.css)
+        .pipe(cleanCSS(option_list.cleanCSS.processors, function (details) {
+            console.log(details.name + ': ' + details.stats.originalSize);
+            console.log(details.name + ': ' + details.stats.minifiedSize);
+        }))
+        .pipe(gulp.dest(path.build.css));
+});
+
+gulp.task('generate sprite', function () {
+    var spriteData = gulp.src(path.src.sprite).pipe(spritesmith({
+        imgName: 'sprite.png',
+        cssName: 'sprite.css',
+        imgPath: '../img/sprite.png'
+    }));
+
+    var imgStream = spriteData.img
+        .pipe(buffer())
+        .pipe(imagemin())
+        .pipe(gulp.dest(path.src.folder.img));
+
+    var cssStream = spriteData.css
+        .pipe(replace(/^\.icon-/gm, '.'))
+        .pipe(gulp.dest(path.src.folder.css));
+
+    return merge(imgStream, cssStream);
+});
+
 gulp.task('copy image', function () {
-    gulp.src(['src/assets/*img/**/*.*']).pipe(gulp.dest(path.build.folder.assets));
+    gulp.src(['src/assets/*img/**/*.*'])
+        .pipe(gulp.dest(path.build.folder.assets));
 });
 
-gulp.task('copy style.min.css', function () {
-    gulp.src(path.build.file.css).pipe(gulp.dest(path.src.folder.css));
+gulp.task('copy fonts', function () {
+    gulp.src(path.src.fonts)
+        .pipe(gulp.dest(path.build.fonts));
 });
 
-gulp.task('delete build', function (cb) {
+gulp.task('delete build folder', function (cb) {
     rimraf(path.clean, cb);
 });
 
 gulp.task('run shell tidy.exe', function () {
+    var reportOptions = {
+        err: false,
+        stderr: false,
+        stdout: false
+    };
     gulp.src('./')
-        .pipe(exec('csstidy.exe build/assets/css/style.min.css build/assets/css/style.min.css'));
+        .pipe(exec('csstidy.exe build/assets/css/style.min.css ' +
+            '--compress_colors=true' +
+            '--optimise_shorthands=0' +
+            '--compress_font-weight=false' +
+            '--sort_selectors=false' +
+            ' build/assets/css/style.min.css'))
+        .pipe(exec.reporter(reportOptions));
 });

@@ -1,6 +1,6 @@
 .one {
-    cursor: pointer;
-}
+     cursor: pointer;
+ }
 .one {
     cursor: default;
 }
@@ -8,14 +8,21 @@
     background-color: red;
 }
 
-.comment {
-    width: 300px;
-    height: 300px;
-    background: url(sprite/ico-comment.png) no-repeat 0 0;
+
+
+.box {
+    border: 1px solid silver;
 }
 
-.bubble {
-    width: 300px;
-    height: 300px;
-    background: url(sprite/ico-bubble.png) no-repeat 0 0;
+
+.box {
+ color: darkblue;
+}
+
+.one {
+    padding: 10px;
+}
+
+.box {
+    border: 1px solid silver;
 }
